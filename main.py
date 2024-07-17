@@ -1,7 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-from dotenv import load_dotenv
-import os
 from repo_utils import is_valid_repolink, get_reponame, clone_github_repo, create_file_content_dict, delete_directory
 from search_utils import make_files_prompt, parse_arr_from_gemini_resp, content_str_from_dict, make_all_files_content_str
 from chat_utils import streamer, transform_stlit_to_genai_history
@@ -13,9 +11,7 @@ st.set_page_config(page_title='Chat with Repo- Gemini API', page_icon="✨")
 data_dir = './repo'
 
 # configure the model
-load_dotenv()
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-genai.configure(api_key=GOOGLE_API_KEY)
+genai.configure(api_key=st.secrets.GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # State vars
@@ -117,6 +113,9 @@ if prompt := st.chat_input(""):
     chat = model.start_chat(history=genai_hist)
     gemini_resp = chat.send_message(input_to_LLM, stream=True)
     with st.chat_message("assistant"):
-        response = st.write_stream(streamer(gemini_resp))
+        try:
+            response = st.write_stream(streamer(gemini_resp))
+        except:
+            response = st.write_stream('Sorry, Gemini categorized your question as unsafe. Try another repo or question')
     st.session_state.messages.append({"role": "assistant", "content": response})
 
