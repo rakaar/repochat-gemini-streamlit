@@ -56,22 +56,23 @@ with st.sidebar:
             clone_folder = get_reponame(repolink)
             reponame = clone_folder.replace('+', '/')
             
-            st.write('1/2 cloning repo')
-            repo_clone_path = f"{data_dir}/{clone_folder}"
-            clone_github_repo(repolink, repo_clone_path)
-
-            st.write('2/2 Processing Files')
-            repo_dict = create_file_content_dict(repo_clone_path)
+            with st.spinner('1/2 Cloning Repo'):
+                repo_clone_path = f"{data_dir}/{clone_folder}"
+                clone_github_repo(repolink, repo_clone_path)
+            
+            
+            with st.spinner('2/2 Processing Files'):
+                repo_dict = create_file_content_dict(repo_clone_path)
             
             delete_directory(repo_clone_path)
-
+            
+            st.success(f'You are ready to chat with repo {reponame}')
+            
             st.session_state['repo_details']['name'] = reponame
             st.session_state['repo_details']['files2code'] = repo_dict
             st.session_state['repo_details']['code'] = make_all_files_content_str(repo_dict)
             st.session_state['repo_details']['is_entire_code_loaded'] = -1
             st.session_state['title'] = f"Chat with {reponame}"
-
-            st.write('You are ready to Chat with repo')
         else:
             st.write("Not a valid Github Repo link")
             st.stop()
