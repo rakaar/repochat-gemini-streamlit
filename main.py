@@ -6,6 +6,9 @@ from repo_utils import is_valid_repolink, get_reponame, clone_github_repo, creat
 from search_utils import make_files_prompt, parse_arr_from_gemini_resp, content_str_from_dict, make_all_files_content_str
 from chat_utils import streamer, transform_stlit_to_genai_history
 
+st.set_page_config(page_title='Chat with Repo- Gemini API', page_icon="✨")
+
+
 # Repo cloning path
 data_dir = './repo'
 
@@ -25,15 +28,22 @@ if 'title' not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if 'button_msg' not in st.session_state:
+    st.session_state.button_msg = 'Submit'
 
 
 
 # Sidebar to fill the link
 with st.sidebar:
     repolink = st.text_input("Github Repo Link")
-    if st.button("Submit"):
+    if st.button(st.session_state['button_msg']):
         print("Input received:", repolink)
         if is_valid_repolink(repolink):
+            if st.session_state['repo_details']['is_entire_code_loaded'] != -1:
+                st.session_state['repo_details'] =  {'name': '', 'files2code': {}, 'is_entire_code_loaded': -1, 'entire_code': ''}
+                st.session_state.messages = []
+                st.session_state['title'] = 'Fill the GitHub Repository link in the sidebar'
+
             clone_folder = get_reponame(repolink)
             reponame = clone_folder.replace('+', '/')
             
@@ -53,7 +63,9 @@ with st.sidebar:
             st.session_state['repo_details']['files2code'] = repo_dict
             st.session_state['repo_details']['code'] = make_all_files_content_str(repo_dict)
             st.session_state['repo_details']['is_entire_code_loaded'] = -1
+            
             st.session_state['title'] = f"Chat with {reponame}"
+            st.session_state['button_msg'] = 'Change Repo'
         else:
             st.write("Not a valid Github Repo link")
             st.stop()
@@ -108,10 +120,3 @@ if prompt := st.chat_input(""):
         response = st.write_stream(streamer(gemini_resp))
     st.session_state.messages.append({"role": "assistant", "content": response})
 
-
-with st.sidebar:
-   if st.session_state['repo_details']['is_entire_code_loaded'] != -1:
-       if st.button('Change Repo'):
-            st.session_state['repo_details'] =  {'name': '', 'files2code': {}, 'is_entire_code_loaded': -1, 'entire_code': ''}
-            st.session_state.messages = []
-            st.session_state['title'] = 'Fill the GitHub Repository link in the sidebar'
