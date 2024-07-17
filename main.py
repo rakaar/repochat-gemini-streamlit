@@ -3,6 +3,8 @@ import google.generativeai as genai
 from repo_utils import is_valid_repolink, get_reponame, clone_github_repo, create_file_content_dict, delete_directory
 from search_utils import make_files_prompt, parse_arr_from_gemini_resp, content_str_from_dict, make_all_files_content_str
 from chat_utils import streamer, transform_stlit_to_genai_history
+import random
+
 
 st.set_page_config(page_title='Chat with Repo- Gemini API', page_icon="✨")
 
@@ -11,7 +13,8 @@ st.set_page_config(page_title='Chat with Repo- Gemini API', page_icon="✨")
 data_dir = './repo'
 
 # configure the model
-genai.configure(api_key=st.secrets.GOOGLE_API_KEY)
+key_num = random.randint(1, 5)
+genai.configure(api_key=st.secrets[f'GOOGLE_API_KEY_{str(key_num)}'])
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # State vars
@@ -60,7 +63,7 @@ with st.sidebar:
             st.session_state['repo_details']['code'] = make_all_files_content_str(repo_dict)
             st.session_state['repo_details']['is_entire_code_loaded'] = -1
             
-            st.session_state['title'] = f"Chat with {reponame}"
+            st.session_state['title'] = f"Chat with {reponame}(using Gemini 1.5 Flash API)"
             st.session_state['button_msg'] = 'Change Repo'
         else:
             st.write("Not a valid Github Repo link")
