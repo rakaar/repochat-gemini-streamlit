@@ -18,7 +18,7 @@ if "repo_details" not in st.session_state:
     st.session_state.repo_details = {'name': '', 'files2code': {}, 'is_entire_code_loaded': -1, 'entire_code': ''}
 
 if 'title' not in st.session_state:
-    st.session_state.title = 'Fill the Reponame'
+    st.session_state.title = 'Fill the GitHub Repository link in the sidebar'
 
 def streamer(gemini_resp):
     for w in gemini_resp:
@@ -79,7 +79,7 @@ with st.sidebar:
 
 
 
-st.title(f"{st.session_state['title']}")
+st.subheader(f"{st.session_state['title']}")
 
 
 
