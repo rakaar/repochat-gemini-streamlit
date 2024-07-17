@@ -4,50 +4,31 @@ from dotenv import load_dotenv
 import os
 from repo_utils import is_valid_repolink, get_reponame, clone_github_repo, create_file_content_dict, delete_directory
 from search_utils import make_files_prompt, parse_arr_from_gemini_resp, content_str_from_dict, make_all_files_content_str
+from chat_utils import streamer, transform_stlit_to_genai_history
 
+# Repo cloning path
 data_dir = './repo'
 
+# configure the model
 load_dotenv()
-
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-
+# State vars
 if "repo_details" not in st.session_state:
     st.session_state.repo_details = {'name': '', 'files2code': {}, 'is_entire_code_loaded': -1, 'entire_code': ''}
 
 if 'title' not in st.session_state:
     st.session_state.title = 'Fill the GitHub Repository link in the sidebar'
 
-def streamer(gemini_resp):
-    for w in gemini_resp:
-        yield w.text
-
-
-
-def transform_stlit_to_genai_history(transform_history, is_entire_code_loaded, entire_code):
-    genai_history = []
-    for message in transform_history:
-        role = 'user' if message['role'] == 'user' else 'model'
-        genai_history.append({
-            'role': role,
-            'parts': [{'text': message['content']}]
-        })
-    
-    if is_entire_code_loaded == 1:
-        print('*************mofifying the first user query****************')
-        prompt_to_use_codebase = "Use the above code if necessary. Preferably answer the below question by citing the filepath and the code"
-        first_user_query = genai_history[0]['parts'][0]['text']
-        first_user_query_modfied = f"'''\n{entire_code}\n'''\n {prompt_to_use_codebase}.{first_user_query}?"
-        genai_history[0]['parts'][0]['text'] = first_user_query_modfied
-
-    return genai_history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 
 
 
-# Using "with" notation
+# Sidebar to fill the link
 with st.sidebar:
     repolink = st.text_input("Github Repo Link")
     if st.button("Submit"):
@@ -77,19 +58,13 @@ with st.sidebar:
             st.write("Not a valid Github Repo link")
             st.stop()
 
-
+    
+ 
 
 st.subheader(f"{st.session_state['title']}")
 
-
-
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    print('displaying message', message)
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
@@ -128,16 +103,15 @@ if prompt := st.chat_input(""):
     input_to_LLM = f"'''\n{relevant_code}\n'''\n {prompt_to_use_codebase}.{prompt}?" 
     genai_hist = transform_stlit_to_genai_history(st.session_state.messages, st.session_state['repo_details']['is_entire_code_loaded'], st.session_state['repo_details']['code']) 
     chat = model.start_chat(history=genai_hist)
-    print('-----------------------')
-    for p in chat.history:
-        print(p)
-    print('-------------------------')
     gemini_resp = chat.send_message(input_to_LLM, stream=True)
     with st.chat_message("assistant"):
         response = st.write_stream(streamer(gemini_resp))
-    # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
 
-def streamer(gemini_resp):
-    for w in gemini_resp:
-        yield w.text
+
+with st.sidebar:
+   if st.session_state['repo_details']['is_entire_code_loaded'] != -1:
+       if st.button('Change Repo'):
+            st.session_state['repo_details'] =  {'name': '', 'files2code': {}, 'is_entire_code_loaded': -1, 'entire_code': ''}
+            st.session_state.messages = []
+            st.session_state['title'] = 'Fill the GitHub Repository link in the sidebar'
