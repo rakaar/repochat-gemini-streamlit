@@ -62,7 +62,7 @@ def clone_github_repo(repo_url, clone_path):
 
 
 def is_valid_repolink(repolink):
-    pattern = re.compile(r'^https://github\.com/[^/]+/[^/]+(/tree/[^/]+)?$')
+    pattern = re.compile(r'^https://github\.com/[^/]+/[^/]+(/tree/[^/]+)?/?$')
     return bool(pattern.match(repolink))
 
 def process_file(file_path, clone_path):
